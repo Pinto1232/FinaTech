@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinaTech - Event-Driven Architecture Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid #28a745;
+            border-radius: 25px;
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .event-log {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .event-item {
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin: 0.5rem;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .event-type {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .event-data {
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-time {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .user-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .user-item:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-email {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .message {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🏦 FinaTech</h1>
+            <p>Event-Driven Financial Technology Platform</p>
+            <div class="status">
+                <div class="status-dot"></div>
+                Event-Driven Architecture: Active
+            </div>
+        </header>
+
+        <div class="dashboard">
+            <!-- User Creation Form -->
+            <div class="card">
+                <h2>
+                    <div class="icon">👤</div>
+                    Create User
+                </h2>
+                <div id="userMessage"></div>
+                <form id="userForm">
+                    <div class="form-group">
+                        <label for="userName">Name:</label>
+                        <input type="text" id="userName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userEmail">Email:</label>
+                        <input type="email" id="userEmail" required>
+                    </div>
+                    <button type="submit" class="btn">Create User</button>
+                </form>
+            </div>
+
+            <!-- Transaction Creation Form -->
+            <div class="card">
+                <h2>
+                    <div class="icon">💳</div>
+                    Create Transaction
+                </h2>
+                <div id="transactionMessage"></div>
+                <form id="transactionForm">
+                    <div class="form-group">
+                        <label for="transactionUser">User:</label>
+                        <select id="transactionUser" required>
+                            <option value="">Select a user</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transactionAmount">Amount:</label>
+                        <input type="number" id="transactionAmount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="transactionType">Type:</label>
+                        <select id="transactionType" required>
+                            <option value="deposit">Deposit</option>
+                            <option value="withdrawal">Withdrawal</option>
+                            <option value="transfer">Transfer</option>
+                            <option value="payment">Payment</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">Create Transaction</button>
+                </form>
+            </div>
+
+            <!-- Users List -->
+            <div class="card">
+                <h2>
+                    <div class="icon">👥</div>
+                    Users
+                </h2>
+                <div id="usersList" class="user-list">
+                    <div class="empty-state">No users yet. Create your first user!</div>
+                </div>
+            </div>
+
+            <!-- Real-time Events -->
+            <div class="card">
+                <h2>
+                    <div class="icon">⚡</div>
+                    Real-time Events
+                </h2>
+                <div id="eventLog" class="event-log">
+                    <div class="empty-state">Waiting for events...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Event-Driven Architecture Simulation
+        class EventBus {
+            constructor() {
+                this.subscribers = {};
+            }
+
+            subscribe(eventType, callback) {
+                if (!this.subscribers[eventType]) {
+                    this.subscribers[eventType] = [];
+                }
+                this.subscribers[eventType].push(callback);
+            }
+
+            publish(eventType, data) {
+                const event = {
+                    type: eventType,
+                    data: data,
+                    timestamp: new Date().toISOString(),
+                    id: Date.now()
+                };
+
+                // Store event
+                events.unshift(event);
+                
+                // Notify subscribers
+                if (this.subscribers[eventType]) {
+                    this.subscribers[eventType].forEach(callback => {
+                        try {
+                            callback(event);
+                        } catch (error) {
+                            console.error('Error in event callback:', error);
+                        }
+                    });
+                }
+
+                // Update UI
+                updateEventLog();
+                
+                console.log(`Event published: ${eventType}`, event);
+                return event;
+            }
+        }
+
+        // Initialize Event Bus and Data
+        const eventBus = new EventBus();
+        const users = [
+            { id: 1, name: 'John Doe', email: 'john.doe@example.com', created_at: new Date().toISOString() }
+        ];
+        const transactions = [];
+        const events = [];
+
+        // Event Handlers
+        function handleUserCreated(event) {
+            console.log('User created:', event.data);
+            updateUsersList();
+            updateTransactionUserSelect();
+        }
+
+        function handleTransactionProcessed(event) {
+            console.log('Transaction processed:', event.data);
+        }
+
+        // Subscribe to events
+        eventBus.subscribe('user_created', handleUserCreated);
+        eventBus.subscribe('transaction_processed', handleTransactionProcessed);
+
+        // UI Functions
+        function showMessage(elementId, message, type = 'success') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 3000);
+        }
+
+        function updateUsersList() {
+            const usersList = document.getElementById('usersList');
+            
+            if (users.length === 0) {
+                usersList.innerHTML = '<div class="empty-state">No users yet. Create your first user!</div>';
+                return;
+            }
+
+            usersList.innerHTML = users.map(user => `
+                <div class="user-item">
+                    <div class="user-name">${user.name}</div>
+                    <div class="user-email">${user.email}</div>
+                    <div class="user-email">ID: ${user.id}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateTransactionUserSelect() {
+            const select = document.getElementById('transactionUser');
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="">Select a user</option>' +
+                users.map(user => `
+                    <option value="${user.id}">${user.name} (${user.email})</option>
+                `).join('');
+            
+            if (currentValue) {
+                select.value = currentValue;
+            }
+        }
+
+        function updateEventLog() {
+            const eventLog = document.getElementById('eventLog');
+            
+            if (events.length === 0) {
+                eventLog.innerHTML = '<div class="empty-state">Waiting for events...</div>';
+                return;
+            }
+
+            eventLog.innerHTML = events.slice(0, 10).map(event => `
+                <div class="event-item">
+                    <div class="event-type">${event.type}</div>
+                    <div class="event-data">${formatEventData(event.data)}</div>
+                    <div class="event-time">${new Date(event.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        function formatEventData(data) {
+            return Object.entries(data).map(([key, value]) => 
+                `<strong>${key}:</strong> ${value}`
+            ).join(', ');
+        }
+
+        // Form Handlers
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            
+            // Create user
+            const userId = users.length + 1;
+            const user = {
+                id: userId,
+                name: name,
+                email: email,
+                created_at: new Date().toISOString()
+            };
+            
+            users.push(user);
+            
+            // Publish event
+            eventBus.publish('user_created', {
+                user_id: userId,
+                name: name,
+                email: email
+            });
+            
+            // Reset form and show message
+            this.reset();
+            showMessage('userMessage', 'User created successfully!');
+        });
+
+        document.getElementById('transactionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('transactionUser').value;
+            const amount = parseFloat(document.getElementById('transactionAmount').value);
+            const type = document.getElementById('transactionType').value;
+            
+            if (!userId) {
+                showMessage('transactionMessage', 'Please select a user', 'error');
+                return;
+            }
+            
+            // Create transaction
+            const transactionId = transactions.length + 1;
+            const transaction = {
+                id: transactionId,
+                user_id: parseInt(userId),
+                amount: amount,
+                type: type,
+                created_at: new Date().toISOString()
+            };
+            
+            transactions.push(transaction);
+            
+            // Publish event
+            eventBus.publish('transaction_processed', {
+                transaction_id: transactionId,
+                user_id: userId,
+                amount: amount,
+                type: type
+            });
+            
+            // Reset form and show message
+            this.reset();
+            showMessage('transactionMessage', 'Transaction created successfully!');
+        });
+
+        // Initialize UI
+        updateUsersList();
+        updateTransactionUserSelect();
+        updateEventLog();
+
+        // Add some demo events on load
+        setTimeout(() => {
+            eventBus.publish('system_started', {
+                message: 'FinaTech Event-Driven Architecture initialized',
+                version: '1.0.0'
+            });
+        }, 1000);
+
+        console.log('🚀 FinaTech Event-Driven Architecture Demo Loaded!');
+        console.log('📊 Event Bus initialized with real-time event processing');
+        console.log('🔄 Try creating users and transactions to see events in action');
+    </script>
+</body>
+</html>
